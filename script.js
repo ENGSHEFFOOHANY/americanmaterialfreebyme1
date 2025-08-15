@@ -1,83 +1,223 @@
-// Configuration - Update these values with your actual WhatsApp group link and Google Drive download link
+// Configuration - Update these values with your actual Google Form URL, WhatsApp group link, and Google Drive download link
 const CONFIG = {
-    whatsappGroupLink: "https://chat.whatsapp.com/KE4EhL007X66Zf0HYezMH8", // Replace with your actual WhatsApp group invite link
+    googleFormUrl: "https://docs.google.com/forms/d/e/1FAIpQLSeeZN7k5OIy6r9SOM-TMhVf3wHzipiGtCdIKhdp4K6QAk8NbA/viewform", // Replace with your actual Google Form URL
+    whatsappGroupLink: "https://chat.whatsapp.com/Foj7XMESN1OBesSjkx7uhG", // Replace with your actual WhatsApp group invite link
     driveDownloadLink: "https://drive.google.com/drive/folders/1xAYgMPgPKLYW-s48UCGJZ2_knb0YEmJA?usp=drive_link", // Replace with your actual Google Drive link
-    groupName: "Your Group Name" // Replace with your actual group name
+    formTitle: "Your Form Title" // Replace with your actual form title
 };
 
 // DOM elements
+const googleFormBtn = document.getElementById('google-form-btn');
 const whatsappBtn = document.getElementById('whatsapp-btn');
-const downloadSection = document.getElementById('download-section');
-const downloadLinkInput = document.getElementById('download-link');
-const copyBtn = document.getElementById('copy-btn');
-const downloadBtn = document.getElementById('download-btn');
+const accessSection = document.getElementById('access-section');
+
+// Step elements
+const step1 = document.getElementById('step-1');
+const step2 = document.getElementById('step-2');
+const step1Status = document.getElementById('step-1-status');
+const step2Status = document.getElementById('step-2-status');
+
+// Progress elements
+const progressFill = document.getElementById('progress-fill');
+const progressText = document.getElementById('progress-text');
+
+// Google Form elements
+const googleFormModal = document.getElementById('google-form-modal');
+const googleFormIframe = document.getElementById('google-form-iframe');
+const closeModal = document.querySelector('.close');
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
-    // Set the download link
-    downloadLinkInput.value = CONFIG.driveDownloadLink;
-    downloadBtn.href = CONFIG.driveDownloadLink;
+    // Clear all stored data on every visit to reset the steps
+    localStorage.removeItem('step1Completed');
+    localStorage.removeItem('step1CompletedAt');
+    localStorage.removeItem('step2Completed');
+    
+    // Reset all step UI to initial state
+    resetStepsToInitialState();
+    
+
+    
+    // Add click event to Google Form button
+    googleFormBtn.addEventListener('click', openGoogleForm);
     
     // Add click event to WhatsApp button
     whatsappBtn.addEventListener('click', handleWhatsAppClick);
     
-    // Add click event to copy button
-    copyBtn.addEventListener('click', handleCopyClick);
-    
-    // Reset user joined status every time page loads
-    localStorage.removeItem('whatsappGroupJoined');
-});
 
-// Show download section
-function showDownloadSection() {
-    downloadSection.style.display = 'block';
     
-    // Scroll to download section smoothly
-    downloadSection.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'center' 
+    // Close modal events
+    closeModal.addEventListener('click', closeGoogleForm);
+    googleFormModal.addEventListener('click', function(e) {
+        if (e.target === googleFormModal) {
+            closeGoogleForm();
+        }
     });
     
-    // Show success message
-    showNotification('Success! Your download link is now available.', 'success');
-}
-
-// Handle copy button click
-function handleCopyClick() {
-    downloadLinkInput.select();
-    downloadLinkInput.setSelectionRange(0, 99999); // For mobile devices
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && googleFormModal.style.display === 'block') {
+            closeGoogleForm();
+        }
+    });
     
-    try {
-        // Copy to clipboard
-        document.execCommand('copy');
-        
-        // Show success message
-        showNotification('Download link copied to clipboard!', 'success');
-        
-        // Change button text temporarily
-        const originalText = copyBtn.innerHTML;
-        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-        copyBtn.style.background = '#28a745';
-        
-        setTimeout(() => {
-            copyBtn.innerHTML = originalText;
-            copyBtn.style.background = '#6c757d';
-        }, 2000);
-        
-    } catch (err) {
-        // Fallback for modern browsers
-        navigator.clipboard.writeText(downloadLinkInput.value).then(() => {
-            showNotification('Download link copied to clipboard!', 'success');
-        }).catch(() => {
-            showNotification('Failed to copy link. Please select and copy manually.', 'error');
-        });
-    }
+    // Show welcome message
+    showNotification('Welcome! Please complete both steps to get access.', 'info');
+});
+
+// Google Form Functions
+function openGoogleForm() {
+    console.log('Opening Google Form...');
+    
+    // Set the iframe source using the configured URL
+    googleFormIframe.src = CONFIG.googleFormUrl;
+    
+    // Show the modal
+    googleFormModal.style.display = 'block';
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    // Show notification
+    showNotification('Please complete the form to get access!', 'info');
+    
+    // Add form submission listener
+    setupFormSubmissionListener();
+    
+    console.log('Google Form modal opened');
 }
 
-// Mark user as joined
-function markUserJoined() {
-    localStorage.setItem('whatsappGroupJoined', 'true');
+function closeGoogleForm() {
+    // Hide the modal
+    googleFormModal.style.display = 'none';
+    
+    // Clear the iframe source to stop loading
+    googleFormIframe.src = '';
+    
+    // Restore body scroll
+    document.body.style.overflow = 'auto';
 }
+
+function setupFormSubmissionListener() {
+    console.log('Setting up form submission listener...');
+    
+    // Start a 15-second timer to automatically unlock step 2
+    startFormCompletionTimer();
+    
+    // Show helpful instructions
+    showNotification('Form opened! Step 2 will unlock automatically in 10 seconds.', 'info');
+    
+    // Add a helpful message in the modal
+    addFormInstructions();
+    
+    console.log('Form submission listener setup complete');
+}
+
+function addFormInstructions() {
+    // Instructions removed - no more blue instruction boxes
+}
+
+function startFormCompletionTimer() {
+    // Create a countdown timer display in the modal
+    const modalBody = document.querySelector('.modal-body');
+    
+    if (!modalBody) {
+        console.error('Modal body not found!');
+        return;
+    }
+    
+    // Create timer section
+    const timerSection = document.createElement('div');
+    timerSection.style.cssText = `
+        padding: 20px;
+        background: #e3f2fd;
+        border-radius: 10px;
+        margin: 20px;
+        text-align: center;
+        border: 2px solid #2196f3;
+    `;
+    
+    timerSection.innerHTML = `
+        <h4 style="color: #1565c0; margin-bottom: 15px; font-size: 18px;">
+            <i class="fas fa-clock"></i> Step 2 Unlock Timer
+        </h4>
+        <div style="font-size: 24px; font-weight: bold; color: #1976d2; margin-bottom: 15px;">
+            <span id="countdown-timer">10</span> seconds
+        </div>
+        <p style="color: #1565c0; margin: 0; font-size: 14px;">
+            Step 2 will unlock automatically when the timer reaches 0
+        </p>
+    `;
+    
+    // Insert after the iframe
+    modalBody.appendChild(timerSection);
+    
+    // Start countdown
+    let timeLeft = 10;
+    const countdownElement = timerSection.querySelector('#countdown-timer');
+    
+    const countdown = setInterval(() => {
+        timeLeft--;
+        countdownElement.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            
+            // Update timer display
+            timerSection.innerHTML = `
+                <h4 style="color: #28a745; margin-bottom: 15px; font-size: 18px;">
+                    <i class="fas fa-check-circle"></i> Step 2 Unlocked!
+                </h4>
+                <p style="color: #155724; margin: 0; font-size: 14px;">
+                    You can now proceed to join the WhatsApp group
+                </p>
+            `;
+            
+            // Mark form as completed and unlock step 2
+            markFormCompleted();
+            
+            // Show success notification
+            showNotification('Step 2 unlocked! You can now join the WhatsApp group.', 'success');
+        }
+    }, 1000);
+}
+
+function markFormCompleted() {
+    // Mark user as having completed step 1 (Google Form)
+    localStorage.setItem('step1Completed', 'true');
+    localStorage.setItem('step1CompletedAt', Date.now().toString());
+    
+    // Update step 1 UI
+    step1.classList.add('completed');
+    step1Status.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+    step1Status.className = 'step-status completed';
+    
+    // Enable step 2 (WhatsApp)
+    step2.classList.add('active');
+    step2.classList.remove('completed');
+    whatsappBtn.disabled = false;
+    step2Status.innerHTML = '<i class="fas fa-play-circle"></i> Ready';
+    step2Status.className = 'step-status active';
+    
+    // Show success message
+    showNotification('Google Form completed! Now join the WhatsApp group.', 'success');
+    
+    // Update progress
+    updateProgress(50);
+    
+    // Automatically close the modal after a short delay
+    setTimeout(() => {
+        closeGoogleForm();
+    }, 2000);
+}
+
+
+
+
+
+
+
+
 
 // Show notification
 function showNotification(message, type = 'info') {
@@ -130,35 +270,110 @@ function handleWhatsAppClick() {
     whatsappBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Opening WhatsApp...';
     whatsappBtn.disabled = true;
     
-    // Simulate a small delay for better UX
-    setTimeout(() => {
-        // Open WhatsApp group link in new tab
-        window.open(CONFIG.whatsappGroupLink, '_blank');
+    // Open WhatsApp group link in new tab
+    const whatsappWindow = window.open(CONFIG.whatsappGroupLink, '_blank');
+    
+    // Start 20-second timer for WhatsApp completion
+    startWhatsAppCompletionTimer();
+    
+    // Reset button
+    whatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Join WhatsApp Group';
+    whatsappBtn.disabled = false;
+}
+
+function resetStepsToInitialState() {
+    // Reset step 1 to initial state
+    step1.classList.remove('completed', 'active');
+    step1Status.innerHTML = '<i class="fas fa-clock"></i> Pending';
+    step1Status.className = 'step-status';
+    
+    // Reset step 2 to initial state
+    step2.classList.remove('completed', 'active');
+    step2Status.innerHTML = '<i class="fas fa-clock"></i> Pending';
+    step2Status.className = 'step-status';
+    
+    // Disable WhatsApp button
+    whatsappBtn.disabled = true;
+    
+    // Hide access section
+    accessSection.style.display = 'none';
+    
+    // Reset progress bar
+    updateProgress(0);
+}
+
+function startWhatsAppCompletionTimer() {
+    // Start countdown without visual window
+    let timeLeft = 10;
+    
+    const countdown = setInterval(() => {
+        timeLeft--;
         
-        // Show download section after a short delay
-        setTimeout(() => {
-            showDownloadSection();
-            markUserJoined();
-        }, 2000);
-        
-        // Reset button
-        whatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Join WhatsApp Group';
-        whatsappBtn.disabled = false;
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            
+            // Mark WhatsApp step as completed
+            markWhatsAppCompleted();
+        }
     }, 1000);
 }
 
+
+
+function markWhatsAppCompleted() {
+    // Mark user as having completed step 2 (WhatsApp)
+    localStorage.setItem('step2Completed', 'true');
+    
+    // Update step 2 UI
+    step2.classList.add('completed');
+    step2.classList.remove('active');
+    step2Status.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+    step2Status.className = 'step-status completed';
+    
+    // Update progress to 100%
+    updateProgress(100);
+    
+    // Show access section
+    accessSection.style.display = 'block';
+    
+    // Show success message
+    showNotification('WhatsApp step completed automatically! You now have access.', 'success');
+}
+
+function updateProgress(percentage) {
+    progressFill.style.width = percentage + '%';
+    progressText.textContent = percentage + '% Complete';
+    
+    // Add completion animation
+    if (percentage === 100) {
+        progressFill.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+        progressText.style.color = '#28a745';
+        progressText.style.fontWeight = '600';
+    }
+}
+
+
+
 // Add keyboard shortcuts
 document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + Enter to join WhatsApp group
+    // Ctrl/Cmd + Enter to open Google Form
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        openGoogleForm();
+    }
+    
+    // Ctrl/Cmd + W to join WhatsApp group (when step 2 is active)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'w' && !whatsappBtn.disabled) {
         e.preventDefault();
         handleWhatsAppClick();
     }
     
-    // Ctrl/Cmd + C to copy download link (when download section is visible)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'c' && downloadSection.style.display !== 'none') {
+
+    
+    // Ctrl/Cmd + F to open Google Form
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        handleCopyClick();
+        openGoogleForm();
     }
 });
 
@@ -225,4 +440,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.transform = 'scale(1)';
         });
     });
-}); 
+});
+
+ 
