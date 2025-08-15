@@ -96,16 +96,16 @@ function closeGoogleForm() {
     
     // Restore body scroll
     document.body.style.overflow = 'auto';
+    
+    // Start the 10-second timer after closing the form
+    startFormCompletionTimer();
 }
 
 function setupFormSubmissionListener() {
     console.log('Setting up form submission listener...');
     
-    // Start a 15-second timer to automatically unlock step 2
-    startFormCompletionTimer();
-    
     // Show helpful instructions
-    showNotification('Form opened! Step 2 will unlock automatically in 10 seconds.', 'info');
+    showNotification('Form opened! Close the form window to start the 10-second timer.', 'info');
     
     // Add a helpful message in the modal
     addFormInstructions();
@@ -118,23 +118,25 @@ function addFormInstructions() {
 }
 
 function startFormCompletionTimer() {
-    // Create a countdown timer display in the modal
-    const modalBody = document.querySelector('.modal-body');
+    // Create a countdown timer display on the main page
+    const stepsContainer = document.querySelector('.steps-container');
     
-    if (!modalBody) {
-        console.error('Modal body not found!');
+    if (!stepsContainer) {
+        console.error('Steps container not found!');
         return;
     }
     
     // Create timer section
     const timerSection = document.createElement('div');
+    timerSection.id = 'timer-section';
     timerSection.style.cssText = `
         padding: 20px;
         background: #e3f2fd;
         border-radius: 10px;
-        margin: 20px;
+        margin: 20px 0;
         text-align: center;
         border: 2px solid #2196f3;
+        animation: slideUp 0.6s ease-out;
     `;
     
     timerSection.innerHTML = `
@@ -149,8 +151,8 @@ function startFormCompletionTimer() {
         </p>
     `;
     
-    // Insert after the iframe
-    modalBody.appendChild(timerSection);
+    // Insert after the steps container
+    stepsContainer.parentNode.insertBefore(timerSection, stepsContainer.nextSibling);
     
     // Start countdown
     let timeLeft = 10;
@@ -205,10 +207,7 @@ function markFormCompleted() {
     // Update progress
     updateProgress(50);
     
-    // Automatically close the modal after a short delay
-    setTimeout(() => {
-        closeGoogleForm();
-    }, 2000);
+    // Don't close the modal automatically - let user close it manually
 }
 
 
@@ -298,19 +297,78 @@ function resetStepsToInitialState() {
     // Hide access section
     accessSection.style.display = 'none';
     
+    // Remove timer sections if they exist
+    const existingTimer = document.getElementById('timer-section');
+    if (existingTimer) {
+        existingTimer.remove();
+    }
+    
+    const existingWhatsappTimer = document.getElementById('whatsapp-timer-section');
+    if (existingWhatsappTimer) {
+        existingWhatsappTimer.remove();
+    }
+    
     // Reset progress bar
     updateProgress(0);
 }
 
 function startWhatsAppCompletionTimer() {
-    // Start countdown without visual window
+    // Create a countdown timer display for WhatsApp completion
+    const stepsContainer = document.querySelector('.steps-container');
+    
+    if (!stepsContainer) {
+        console.error('Steps container not found!');
+        return;
+    }
+    
+    // Create timer section for WhatsApp
+    const whatsappTimerSection = document.createElement('div');
+    whatsappTimerSection.id = 'whatsapp-timer-section';
+    whatsappTimerSection.style.cssText = `
+        padding: 20px;
+        background: #e8f5e8;
+        border-radius: 10px;
+        margin: 20px 0;
+        text-align: center;
+        border: 2px solid #28a745;
+        animation: slideUp 0.6s ease-out;
+    `;
+    
+    whatsappTimerSection.innerHTML = `
+        <h4 style="color: #155724; margin-bottom: 15px; font-size: 18px;">
+            <i class="fab fa-whatsapp"></i> WhatsApp Completion Timer
+        </h4>
+        <div style="font-size: 24px; font-weight: bold; color: #28a745; margin-bottom: 15px;">
+            <span id="whatsapp-countdown-timer">10</span> seconds
+        </div>
+        <p style="color: #155724; margin: 0; font-size: 14px;">
+            Step 2 will complete automatically when the timer reaches 0
+        </p>
+    `;
+    
+    // Insert after the steps container
+    stepsContainer.parentNode.insertBefore(whatsappTimerSection, stepsContainer.nextSibling);
+    
+    // Start countdown
     let timeLeft = 10;
+    const countdownElement = whatsappTimerSection.querySelector('#whatsapp-countdown-timer');
     
     const countdown = setInterval(() => {
         timeLeft--;
+        countdownElement.textContent = timeLeft;
         
         if (timeLeft <= 0) {
             clearInterval(countdown);
+            
+            // Update timer display
+            whatsappTimerSection.innerHTML = `
+                <h4 style="color: #28a745; margin-bottom: 15px; font-size: 18px;">
+                    <i class="fas fa-check-circle"></i> WhatsApp Step Completed!
+                </h4>
+                <p style="color: #155724; margin: 0; font-size: 14px;">
+                    Your access is now available!
+                </p>
+            `;
             
             // Mark WhatsApp step as completed
             markWhatsAppCompleted();
