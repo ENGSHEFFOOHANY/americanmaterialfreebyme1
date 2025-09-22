@@ -1,7 +1,7 @@
 // Configuration - Update these values with your actual Google Form URL, WhatsApp group link, and Google Drive download link
 const CONFIG = {
     googleFormUrl: "https://docs.google.com/forms/d/e/1FAIpQLSeeZN7k5OIy6r9SOM-TMhVf3wHzipiGtCdIKhdp4K6QAk8NbA/viewform", // Replace with your actual Google Form URL
-    whatsappGroupLink: "https://chat.whatsapp.com/Foj7XMESN1OBesSjkx7uhG", // Replace with your actual WhatsApp group invite link
+    whatsappGroupLink: "https://chat.whatsapp.com/DxxX61C9dXaKoFjQ6L18Lh", // Replace with your actual WhatsApp group invite link
     driveDownloadLink: "https://drive.google.com/drive/folders/1xAYgMPgPKLYW-s48UCGJZ2_knb0YEmJA?usp=drive_link", // Replace with your actual Google Drive link
     formTitle: "Your Form Title" // Replace with your actual form title
 };
